@@ -1,0 +1,31 @@
+<?php
+function node_to_xml_form_alter(&$form, &$form_state, $form_id) {
+       if ($form_id == "flashpics_node_form") {
+      $form['#submit'][] = 'node_to_xml_submit_function';
+      }
+    }
+
+function node_to_xml_submit_function($form, &$form_state){   
+  if ($form['#node']->type == "flashpics") {
+    $node = $form['field_flash_img']['und']; 
+    $path = "c:\\WebServers\\home\\lim\\www\\sites\\all\\themes\\limuzin\\photo-rotator\\images.xml";
+    $file = fopen ($path,"w");
+    if (!$file) {echo "Cann't open file in".$path;}
+    $data = '';
+    $data .= '<images>'."\r\n";
+    $i = 0;
+    while ($i<$node['#file_upload_delta']) {
+        $path = file_create_url($form['field_flash_img']['und'][$i]['#file']->uri);
+        if ($i<9){$num = "0";$num .= $i+1;} else {$num = $i+1;}
+        $desc = '';
+        //echo $num;
+        if ($node[$i]['alt']['#value'] <> '') {$desc .= '<head>' . $node[$i]['alt']['#value']. '</head>';}
+        if ($node[$i]['title']['#value'] <> '') {$desc .= '<br><body>' . $node[$i]['title']['#value']. '</body>';}
+        $data .= "\t" . '<photo image="' . $path . '" colorboxImage="' . $path . '" colorboxInfo="Item '. $num . '" colorboxClass="image">' . "\r\n";
+        $data .= "\t" . '<![CDATA[' . $desc . ']]></photo>' . "\r\n" . "\r\n";
+        $i++;        
+    }  
+    $data .= '</images>';
+    fwrite($file,$data);    
+  }
+}

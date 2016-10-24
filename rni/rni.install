@@ -1,0 +1,36 @@
+<?php
+/**
+ * @file
+ * Install, update, and uninstall functions for rni.
+ *
+ * @ingroup rni
+ */
+
+/**
+ * Implements hook_install().
+ */
+ function rni_install() {
+  // Set some default variables necessary for the module to perform.
+    variable_set('rni_inumber', 4);
+    variable_set('rni_source_path', '');
+    variable_set('rni_source_field', '');
+    variable_set('rni_source_img_preview', 'thumbnail');
+    variable_set('rni_source_lightbox', 0);
+    variable_set('rni_show_all', 0);
+    variable_set('rni_view_all', 1);
+
+  db_update('system')
+    ->fields(array('weight' => 1))
+    ->condition('type', 'module')
+    ->condition('name', 'rni')
+    ->execute();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function rni_uninstall() {
+  // Delete all the pathauto variables and then clear the variable cache
+  db_query("DELETE FROM {variable} WHERE name LIKE 'rni_%'");
+  cache_clear_all('variables', 'cache');
+}

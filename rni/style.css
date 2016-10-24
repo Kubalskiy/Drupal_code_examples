@@ -1,0 +1,43 @@
+﻿.page-admin-structure-block-manage-rni .form-item-rni-inumber {padding: 0px;}
+.page-admin-structure-block-manage-rni .form-item-rni-inumber label,
+ .page-admin-structure-block-manage-rni .form-item-rni-inumber #edit-rni-inumber {
+    float: left;
+    margin-right: 10px;
+}
+.page-admin-structure-block-manage-rni .form-item-rni-source {
+    padding-bottom: 0px;
+    margin-bottom: 0px;
+}
+.page-admin-structure-block-manage-rni #edit-rni-source {
+    margin-left: 20px;
+}
+.page-admin-structure-block-manage-rni .form-item-rni-source .form-type-radio {padding:0px;}
+.page-admin-structure-block-manage-rni .form-item-rni-source-path,
+.page-admin-structure-block-manage-rni .form-item-rni-source-field,
+.page-admin-structure-block-manage-rni .form-item-rni-source-img-preview {
+    padding:0px;
+}
+.page-admin-structure-block-manage-rni .form-item-rni-source-path label,
+.page-admin-structure-block-manage-rni .form-item-rni-source-field label,
+.page-admin-structure-block-manage-rni .form-item-rni-source-img-preview label {
+    float: left;
+    margin-right: 10px;
+}
+
+.page-admin-structure-block-manage-rni .form-item-rni-source-img-preview {
+    float: left;
+    margin-right: 15px;
+}
+
+#edit-rni-source-get-fields {
+    padding: 0;
+}
+#edit-rni-source-button {
+    height: 20px;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-left: 15px;
+}
+.form-item-rni-source-path {
+    float: left;
+}

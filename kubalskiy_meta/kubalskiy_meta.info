@@ -1,0 +1,10 @@
+; $Id$ 
+name = Kubalskiy Meta
+description = Lets set title and meta's for particular node.
+package = kubalskiy
+core = 7.x 
+version = 7.x-0.as-alpha-as-it-gets 
+
+files[] = kubalskiy_meta.module 
+
+configure = admin/config/search/metas

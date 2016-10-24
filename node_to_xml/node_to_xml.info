@@ -1,0 +1,8 @@
+; $Id$ 
+name = Node to XML 
+description = Help to save img data into xml for flash banner
+package = kubalskiy
+core = 7.x 
+version = 7.x-0.as-alpha-as-it-gets 
+
+files[] = node_to_xml.module 

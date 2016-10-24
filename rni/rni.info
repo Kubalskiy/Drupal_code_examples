@@ -1,0 +1,11 @@
+; Information added by drupal.org packaging script on 2012-06-08
+name = Random Node Image 
+description = Display X-images from specified node.
+package = kubalskiy
+version = "7.x-1.0-alpha2"
+core = 7.x
+project = "rni"
+
+files[] = rni.module
+stylesheets[all][] = Style.css
+configure = admin/structure/block/manage/rni/rni_block/configure

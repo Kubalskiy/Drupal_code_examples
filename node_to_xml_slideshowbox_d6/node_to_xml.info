@@ -1,0 +1,6 @@
+; $Id$ 
+name = "Node to XML"
+description = "Help to save img data into xml for SlideshowBox flash"
+version = "6.x-1.0-alpha1"
+core = "6.x"
+package = kubalskiy

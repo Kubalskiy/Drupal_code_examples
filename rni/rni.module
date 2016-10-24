@@ -1,0 +1,227 @@
+<?php 
+// $Id$ 
+
+/**
+ * Implements hook_permission().
+ */
+function rni_permission() {
+  return array(
+    'administer rni' => array(
+      'title' => t('Administer Random Node Image'),
+      'description' => t('Allows a user to configure Random Node Image Block.'),
+    ),
+    'view rni' => array(
+      'title' => t('View Random Node Image Block'),
+      'description' => t('Allows a user to view images from Random Node Image Block on pages.'),
+    ),
+  );
+}
+ 
+function rni_block_info() {
+  $blocks['rni_block'] = array (
+    'info' => t('Random Node Image Block'),  
+  );
+  return $blocks;
+}
+
+function rni_block_configure($delta = '') {
+  if ($delta == 'rni_block') {
+	if (!user_access('administer rni')) {return null;}
+	$opt = array();
+	$opt['thumbnail'] = 'thumbnail';
+	$opt['medium'] = 'medium';
+	$opt['large'] = 'large';
+	$result = db_query('SELECT * FROM image_styles WHERE 1');
+	$row = $result->fetchAllAssoc('name');
+	foreach ($row as &$istyle){
+		$opt[$istyle->name] = $istyle->name;
+	}
+	$form = array();
+	
+    //$form['#tree'] = TRUE;// if need to access [name][x]..
+    $form['rni_block_config_form'] = array(
+      '#type'     => 'fieldset',
+      '#title'    => t('Display Settings'),
+      '#required' => TRUE,
+      '#prefix' => '<div id="rni-names-fieldset-wrapper">',
+      '#suffix' => '</div>',  
+    );
+    $form['rni_block_config_form']['rni_inumber'] = array(
+      '#type'           => 'textfield',
+      '#title'          => t('Number of images:'),
+      '#size'           => 1,
+      '#description'    => t('(Number of dislpayed images.)'),
+      '#default_value'  => variable_get('rni_inumber', 4),
+    );
+    $form['rni_block_config_form']['rni_source_path'] = array (
+      '#type'     => 'textfield',
+      '#title'    => t('Alias or releative Node path:'),
+      '#size'     => 20,
+      '#required' => TRUE,                                         
+      '#default_value' => variable_get('rni_source_path', ''),
+    );
+    //!!!!!!!!!!!!!!!!!!!!!!BUTTON!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    $form['rni_block_config_form']['rni_source_button'] = array (
+      '#type'   => 'submit',     
+      '#value'  => t('Get fields'),
+      '#submit' => array('submit_rni_source_button'),
+      '#ajax' => array(
+      // When 'event' occurs, Drupal will perform an ajax request in the
+      // background. Usually the default value is sufficient (eg. change for
+      // select elements), but valid values include any jQuery event,
+      // most notably 'mousedown', 'blur', and 'submit'.
+        'event' => 'submit',
+        'callback' => 'ajax_rni_source_button_callback',
+        'wrapper' => 'rni-names-fieldset-wrapper',
+      ),
+    );
+    $fields_to_show = array(t('NONE'));
+      $fields_to_show = drupal_map_assoc(get_fields_by_node(variable_get('rni_source_path', ''))); 
+     $form['rni_block_config_form']['rni_source_field'] = array (
+      '#type'          => 'select',
+      '#title'         => t('Name of Field with images:'),
+      '#options'       => $fields_to_show,
+      '#default_value' => variable_get('rni_source_field', ''),
+    );
+    $form['rni_block_config_form']['rni_source_img_preview'] = array(
+      '#type' => 'select',
+      '#title' => t('Preview style:'),
+      '#options' => $opt,
+      '#default_value' => variable_get('rni_source_img_preview', 'thumbnail'),
+    );
+    $form['rni_block_config_form']['rni_source_lightbox'] = array (
+      '#type'     => 'checkbox',
+      '#title'    => t('Open with Lightbox:'),
+      '#default_value' => variable_get('rni_source_lightbox', ''),
+    );
+	$form['rni_block_config_form']['rni_show_all'] = array (
+      '#type'     => 'checkbox',
+      '#title'    => t('Show all images in node with Lightbox'),
+      '#default_value' => variable_get('rni_show_all', ''),
+    );
+	$form['rni_block_config_form']['rni_view_all'] = array (
+      '#type'     => 'checkbox',
+      '#title'    => t('Show View All link at bottom'),
+      '#default_value' => variable_get('rni_view_all', 1),
+    );
+  }
+  return $form; 
+}
+
+function rni_block_save($delta = '', $edit = array()) { 
+  if ($delta == 'rni_block') {  
+	if (!user_access('administer rni')) {return null;}  
+    variable_set('rni_inumber', $edit['rni_inumber']);
+    variable_set('rni_source_path', $edit['rni_source_path']);
+    variable_set('rni_source_field', $edit['rni_source_field']);
+    variable_set('rni_source_img_preview', $edit['rni_source_img_preview']);
+    variable_set('rni_source_lightbox', $edit['rni_source_lightbox']);
+    variable_set('rni_show_all', $edit['rni_show_all']);
+    variable_set('rni_view_all', $edit['rni_view_all']);
+  }
+  return;
+} 
+
+function rni_block_view ($delta = ''){
+  if ($delta == 'rni_block') {
+    if (!user_access('view rni')) {return null;}
+    $inumber  = variable_get('rni_inumber', 4);
+    $path     = variable_get('rni_source_path', '');
+    $imfield  = variable_get('rni_source_field', '');
+    $prev     = variable_get('rni_source_img_preview', 'thumbnail');
+    $lbck     = variable_get('rni_source_lightbox', 0);
+	$showall  = variable_get('rni_show_all', 0);
+	$viewall  = variable_get('rni_view_all', 1);
+	
+    $output   = '';
+    $output  .= '<div class="rni-img-wrapper">';
+    $output  .= '';
+    $temp = explode("/",drupal_get_normal_path($path));
+    $nid = $temp[count($temp)-1];
+    $node = node_load($nid);
+      
+    if (!$node) {
+		$output .= t("ERROR node(s) wasn't loaded");
+	} else {
+		$nimg = count($node->{$imfield}['und']);
+		if ($nimg == 1) {
+			if ($lbck == 1) {
+				$output .= '<a href="'.file_create_url($node->{$imfield}['und'][0]['uri']).'" rel="lightbox['.$inumber.']">';
+				$output .= '<div class="rni-img">'.theme_image_style(array('style_name' => $prev, 'path' => $node->{$imfield}['und'][0]['uri'],'width' => NULL,  'height' => NULL,)).'</div>';
+				$output .= '</a>';
+			} else  {
+				$output .= '<div class="rni-img">'.theme_image_style(array('style_name' => $prev, 'path' => $node->{$imfield}['und'][0]['uri'],'width' => NULL,  'height' => NULL,)).'</div>';
+			}
+		} else{
+            if ($nimg < $inumber) {$inumber = $nimg;}
+			$bef = $inumber;
+			if (($lbck == 1) && ($showall == 1)) { $inumber = $nimg;}
+			$arr[] = null;
+			$i=0;
+			while ($i<$inumber) {
+				$inext = rand(0,$nimg-1);
+				if (in_array($inext,$arr)) {
+					continue;
+				} else {
+					$arr[$i] = $inext;
+					if ($lbck == 1) {
+						if (($i < $bef)) {
+							$output .= '<a href="'.file_create_url($node->{$imfield}['und'][$inext]['uri']).'" rel="lightbox['.$inumber.']">';
+							$output .= '<div class="rni-img">'.theme_image_style(array('style_name' => $prev, 'path' => $node->{$imfield}['und'][$inext]['uri'],'width' => NULL,  'height' => NULL,)).'</div>';
+							$output .= '</a>';
+						} 
+						if (($showall == 1) && ($i > $bef)) {
+							$output .= '<a href="'.file_create_url($node->{$imfield}['und'][$inext]['uri']).'" rel="lightbox['.$inumber.']">';
+							$output .= '<div class="rni-img-nxt" style="display:none;">'.theme_image_style(array('style_name' => $prev, 'path' => $node->{$imfield}['und'][$inext]['uri'],'width' => NULL,  'height' => NULL,)).'</div>';
+							$output .= '</a>';					
+						}
+					} else  {
+						$output .= '<div class="rni-img">'.theme_image_style(array('style_name' => $prev, 'path' => $node->{$imfield}['und'][$inext]['uri'],'width' => NULL,  'height' => NULL,)).'</div>';
+					}
+					$i++;
+				}
+			} 
+		}
+	}
+    
+    $output .= '</div>';
+	if ($viewall == 1) {
+		$output .= '<div class="rni-img-dummy"></div>';
+		$output .= '<div class ="rni-gallery-block"><a href="'.$path.'">'.t('View All').'</a></div>';
+	}
+	$block['content'] = $output;
+	return $block;
+  }
+}
+
+function submit_rni_source_button($form, $form_state) {
+	if (!user_access('administer rni')) {return null;}
+	variable_set('rni_inumber',$form['settings']['rni_block_config_form']['rni_inumber']['#value']);
+	variable_set('rni_source_path',$form['settings']['rni_block_config_form']['rni_source_path']['#value']);
+	variable_set('rni_source_img_preview',$form['settings']['rni_block_config_form']['rni_source_img_preview']['#value']);
+	variable_set('rni_source_lightbox',$form['settings']['rni_block_config_form']['rni_source_lightbox']['#value']);
+	variable_set('rni_show_all',$form['settings']['rni_block_config_form']['rni_show_all']['#value']);
+	variable_set('rni_view_all',$form['settings']['rni_block_config_form']['rni_view_all']['#value']);
+	$form_state['rebuild'] = TRUE;
+	
+	//drupal_rebuild_form('rni_block_config_form', &$form_state, $old_form = NULL);
+}
+
+function ajax_rni_source_button_callback($form, $form_state) {
+  return $form['rni_block_config_form'];
+}
+
+function get_fields_by_node ($node_name = NULL) {
+	if ($node_name) {
+		$path = drupal_get_normal_path($node_name);
+		$temp = explode("/",$path);
+		$nid = $temp[count($temp)-1];  
+		$t = node_load($nid);
+		if ($t) {
+			return array_keys(field_info_instances('node',$t->type));
+		} else {
+			return array(t('NODE NOT FOUND'));drupal_set_message(t('Wrong node path. Please fix it'),'error');
+		}
+	}
+	return;
+}

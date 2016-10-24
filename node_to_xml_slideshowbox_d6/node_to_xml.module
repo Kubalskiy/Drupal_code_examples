@@ -1,0 +1,50 @@
+<?php
+function node_to_xml_form_alter(&$form, &$form_state, $form_id) {
+// рср сйюгюрэ рхо мндш_node_form
+       if ($form_id == "ourp_node_form") {
+      $form['#submit'][] = 'node_to_xml_submit_function';
+      }
+    }
+
+function node_to_xml_submit_function($form, &$form_state){   
+// рср сйюгюрэ рхо мндш
+  if ($form['#node']->type == "ourp") {
+// рср сйюгюрэ онке я йюпрхмйюлх хг рхою мндш
+    $node = $form['field_img']; 
+// рср сйюгюрэ лнфмн дпсцни осрэ дкъ янупюмемхъ якюиднб. ыюя ярнхр б йнпемэ б оюойс slide
+    $path = ".\\slide\\node_".arg(1).".xml";
+	$counts = count($node)-18;
+	echo $counts. "<BR>";
+	echo $path. "<BR>";
+	echo "<pre>";
+	print_r($node);
+	echo "</pre>";
+    $file = fopen($path,"w");
+    if (!$file) {echo "Cann't open file in ".$path;}
+    $data = '';
+    $data .= '<?xml version="1.0" encoding="utf-8"?>'."\r\n";
+    $data .= '<SlideshowBox>'."\r\n";
+    $data .= '<items>'."\r\n";
+    $i = 0;
+    while ($i < $counts) {
+        $filepath = $node[$i]['#value']['filepath'];
+		if ($filepath != "") {
+			$titl = $node[$i]['#value']['data']['title'];
+			$desc = $node[$i]['#value']['data']['alt'];
+			$data .= '<item>'."\r\n";
+			$data .= '<thumbnailPath>/'.$filepath.'</thumbnailPath>'."\r\n";
+			$data .= '<largeImagePath>/'.$filepath.'</largeImagePath>'."\r\n";
+			$data .= '<fullScreenImagePath>/'.$filepath.'</fullScreenImagePath>'."\r\n";
+			$data .= '<title>'.$titl.'</title>'."\r\n";
+			$data .= '<description>'.$desc.'</description>'."\r\n";
+			$data .= '</item>';
+		}
+		$i++;        
+    }  
+    $data .= "\r\n".'</items>'."\r\n";
+    $data .= '</SlideshowBox>';
+    fwrite($file,$data);    
+	fflush($file);
+	fclose($file);
+  }
+}
